@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>任务骰子学习站 V5</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body class="parallax-container" data-motion-level="full" data-theme-mode="default">
+  <div class="page-background" aria-hidden="true"></div>
+  <canvas class="global-weather-effect global-weather-backdrop" id="globalWeatherBackdrop" aria-hidden="true"></canvas>
+  <canvas class="global-weather-effect global-snow-effect" id="globalSnowEffect" aria-hidden="true"></canvas>
+  <canvas class="global-weather-effect global-rain-effect" id="globalRainEffect" aria-hidden="true"></canvas>
+
+  <div class="wrap">
+    <header class="top">
+      <div class="top-flight" aria-hidden="true">
+        <span class="orbit"></span>
+        <span class="meteor"></span>
+        <span class="ship"></span>
+      </div>
+      <div class="top-copy">
+        <div class="theme-label">Stellaris Band Core / Mission Chronicle</div>
+        <div class="title">任务骰子学习站</div>
+        <p class="sub">欢迎你的到来。本网站为静态部署，所有数据只保存在当前浏览器的本地存储中。你可以在这里记录任务进度、周记录与完成情况。</p>
+      </div>
+      <div class="stats">
+        <div>今日日期：<span id="todayDate"></span></div>
+        <div>今日累计时长：<strong id="todayWorkTop">00:00:00</strong></div>
+        <div>今日完成任务数：<strong id="todayDoneTop">0</strong></div>
+      </div>
+    </header>
+
+    <div class="dev-nav-hub">
+      <button class="btn dev-nav-toggle" id="btnToggleDevNav" type="button" aria-expanded="false" aria-controls="mainNav">开发调试导航</button>
+      <span class="dev-nav-note">普通流程始终从 Intro 进入；顶部导航只保留为开发调试入口。</span>
+    </div>
+
+    <nav class="main-nav tabs nav-hidden" id="mainNav" aria-label="V5 主导航">
+      <button class="tab active" data-tab="intro">Intro</button>
+      <button class="tab" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="tasks">Tasks</button>
+      <button class="tab" data-tab="week">Week</button>
+      <button class="tab" data-tab="summary">Summary</button>
+      <button class="tab" data-tab="info">Info</button>
+    </nav>
+
+    <section class="panel active" id="panel-intro">
+      <div class="card panel-shell intro-shell">
+        <div class="panel-ambient-stage stage-intro" data-ambient-panel="intro" data-ambient-theme="intro" data-ambient-density="medium" aria-hidden="true">
+          <div class="panel-ambient-backdrop"></div>
+          <div class="panel-ambient-vignette"></div>
+          <span class="panel-ambient-light light-a"></span>
+          <span class="panel-ambient-light light-b"></span>
+          <span class="panel-ambient-shard shard-a"></span>
+          <span class="panel-ambient-shard shard-b"></span>
+          <span class="panel-ambient-shard shard-c"></span>
+          <span class="panel-ambient-orbit orbit-a"></span>
+          <span class="panel-ambient-orbit orbit-b"></span>
+          <span class="panel-ambient-scan"></span>
+          <canvas class="ambient-particles"></canvas>
+        </div>
+        <div class="intro-stage">  
+          <div class="intro-copy">
+            <div class="panel-kicker">Intro / Mission Gate</div>
+            <h2>任务骰子学习站 V5</h2>
+            <div class="intro-subtitle">Weekly Chronicle / Mission Archive</div>
+            <p class="skeleton-note">这里是 V5 的单界面开局入口。进入后仍然使用原有的学习计时、任务池、周记录与导入导出逻辑，只把进入路径调整为 Intro → 主应用。</p>
+            <p class="intro-world">星海终端会记录你的每日推进、任务抽取与周热力轨迹。点击“开始记录”进入今日控制台；点击“继续上次”将回到你最近使用的主界面。</p>
+            <div class="intro-action-grid intro-scene-grid">
+              <button class="btn primary intro-scene-pill intro-scene-pill-main" id="btnIntroStart" type="button">开始记录</button>
+              <button class="btn intro-scene-pill" id="btnIntroContinue" type="button">继续上次</button>
+              <button class="btn intro-scene-pill" id="btnIntroSummary" type="button">查看全局结算</button>
+              <button class="btn intro-scene-pill" id="btnIntroInfo" type="button">设置 / 说明</button>
+              <button class="btn intro-task-entry intro-scene-pill" id="btnIntroTasks" type="button">进入任务池</button>
+            </div>
+            <div class="intro-status-row">
+              <div class="box intro-status-card">
+                <div class="muted">上次所在界面</div>
+                <div class="big-num" style="font-size:22px" id="introLastPanelLabel">Dashboard</div>
+              </div>
+            </div>
+          </div>
+          <div class="intro-visual">
+            <div class="intro-visual-frame">
+              <div class="intro-visual-card intro-info-board">
+                <div class="intro-module intro-module-clock">
+                  <div class="intro-module-kicker">Local Time</div>
+                  <div class="intro-clock-dial" aria-hidden="true">
+                    <span class="intro-clock-ring ring-a"></span>
+                    <span class="intro-clock-ring ring-b"></span>
+                    <span class="intro-clock-hand hand-hour"></span>
+                    <span class="intro-clock-hand hand-minute"></span>
+                    <span class="intro-clock-core"></span>
+                  </div>
+                  <div class="intro-clock-display" id="introClockTime">00:00:00</div>
+                  <div class="intro-clock-meta">
+                    <span id="introClockTimezone">UTC+08:00</span>
+                    <span id="introClockStatus">北京时间同步中</span>
+                  </div>
+                </div>
+
+                <div class="intro-module intro-module-weather" id="introWeatherCard">
+                  <div class="intro-module-kicker">Weather Node</div>
+                  <div class="intro-weather-search">
+                    <input id="introWeatherInput" type="text" placeholder="搜索城市天气" spellcheck="false" />
+                    <button id="introWeatherSearchBtn" type="button" aria-label="搜索天气">
+                      <img src="./weather-app/images/search.png" alt="" />
+                    </button>
+                  </div>
+                  <div class="intro-weather-error hidden" id="introWeatherError">未找到对应城市，请检查拼写后重试。</div>
+                  <div class="intro-weather-body">
+                    <div class="intro-weather-hero">
+                      <img class="intro-weather-icon-img" id="introWeatherIcon" src="./weather-app/images/clear.png" alt="" />
+                      <div class="intro-weather-main-copy">
+                        <div class="intro-weather-temp" id="introWeatherTemp">--°C</div>
+                        <div class="intro-weather-city" id="introWeatherCity">上海</div>
+                        <div class="intro-weather-status" id="introWeatherStatus">等待天气数据</div>
+                      </div>
+                    </div>
+                    <div class="intro-weather-stats">
+                      <div class="intro-weather-stat">
+                        <span>湿度</span>
+                        <strong id="introWeatherHumidity">--%</strong>
+                      </div>
+                      <div class="intro-weather-stat">
+                        <span>风速</span>
+                        <strong id="introWeatherWind">-- km/h</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="intro-module intro-module-date">
+                  <div class="intro-module-kicker">Calendar Node</div>
+                  <div class="intro-calendar-card">
+                    <div class="intro-calendar-head">
+                      <span id="introDateYear">2026</span>
+                      <span id="introDateWeekLabel">周一</span>
+                    </div>
+                    <div class="intro-calendar-body">
+                      <div class="intro-calendar-month" id="introDateMonth">04月</div>
+                      <div class="intro-calendar-day" id="introDateDay">22</div>
+                    </div>
+                  </div>
+                  <div class="intro-date-meta" id="introHolidayCountdown">距下一个节假日还有 -- 天</div>
+                </div>
+
+                <div class="intro-module intro-module-weekday">
+                  <div class="intro-module-kicker">Week Flip</div>
+                  <div class="intro-flip-card">
+                    <div class="intro-flip-top" id="introWeekdayName">星期三</div>
+                    <div class="intro-flip-bottom" id="introWeekdayCountdown">还有 -- 天迎来休息日</div>
+                  </div>
+                  <div class="intro-week-meta" id="introWeekMeta">本周推进中</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-dashboard">
+      <div class="scene-rail scene-rail-dashboard" aria-label="场景跳转">
+        <button class="scene-pill" type="button" data-scene-target="intro">返回初始界面</button>
+        <button class="scene-pill" type="button" data-scene-target="dashboard">进入今日任务</button>
+        <button class="scene-pill" type="button" data-scene-target="tasks">进入任务池</button>
+        <button class="scene-pill" type="button" data-scene-target="week">本周星海记录</button>
+        <button class="scene-pill" type="button" data-scene-target="summary">查看全局结算</button>
+        <button class="scene-pill" type="button" data-scene-target="info">设置 / 说明</button>
+      </div>
+      <div class="panel-ambient-stage stage-dashboard" data-ambient-panel="dashboard" data-ambient-theme="dashboard" data-ambient-density="high" aria-hidden="true">
+        <div class="panel-ambient-backdrop"></div>
+        <div class="panel-ambient-vignette"></div>
+        <span class="panel-ambient-light light-a"></span>
+        <span class="panel-ambient-light light-b"></span>
+        <span class="panel-ambient-shard shard-a"></span>
+        <span class="panel-ambient-shard shard-b"></span>
+        <span class="panel-ambient-shard shard-c"></span>
+        <span class="panel-ambient-orbit orbit-a"></span>
+        <span class="panel-ambient-orbit orbit-b"></span>
+        <span class="panel-ambient-scan"></span>
+        <canvas class="ambient-particles"></canvas>
+      </div>
+      <div class="dashboard-shell-v5">
+        <div class="card dashboard-core-v5">
+          <div class="panel-kicker">Today / Mission Console</div>
+          <h2>今日控制台</h2>
+          <p class="dashboard-lead-v5">这里保留开始、暂停、返回继续、结束、任务抽取、倒计时和完成登记，但只走一条新的简单状态链。</p>
+
+          <div class="hero-msg dashboard-status-v5" id="welcomeText">
+            <span class="hero-status" id="heroStatusText">按下“开始进入今日”，开启今日学习记录。</span>
+            <span class="hero-quote" id="heroQuoteText"></span>
+          </div>
+
+          <div class="dashboard-actions-v5">
+            <button class="btn primary" id="btnStartDay" type="button">开始进入今日</button>
+            <button class="btn" id="btnPauseDay" type="button">暂停计时</button>
+            <button class="btn hidden" id="btnResumeDay" type="button">返回继续计时</button>
+            <button class="btn" id="btnEndDay" type="button">结束今日</button>
+          </div>
+
+          <div class="dashboard-metrics-v5">
+            <div class="box dashboard-metric-v5">
+              <div class="muted">今日计时时长</div>
+              <div class="big-num" id="workSecondsText">00:00:00</div>
+            </div>
+            <div class="box dashboard-metric-v5">
+              <div class="muted">当前任务</div>
+              <div class="big-num dashboard-task-name-v5" id="currentTaskText">尚未抽取任务</div>
+            </div>
+            <div class="box dashboard-metric-v5">
+              <div class="muted">任务倒计时</div>
+              <div class="big-num" id="countdownText">01:00:00</div>
+            </div>
+          </div>
+
+          <div class="box dashboard-task-box-v5">
+            <div class="dashboard-task-head-v5">
+              <div>
+                <h3>骰子抽取今日任务</h3>
+                <p class="muted">从当前任务池随机抽取一项任务，并按设定分钟数开始当前轮倒计时。</p>
+              </div>
+              <div class="field dashboard-minute-field-v5">
+                <label for="customMinutes">倒计时分钟数</label>
+                <input id="customMinutes" type="number" min="1" value="60" />
+              </div>
+            </div>
+
+            <div class="dashboard-actions-v5 dashboard-actions-secondary-v5">
+              <button class="btn dark" id="btnRoll" type="button">骰子抽取</button>
+              <button class="btn primary" id="btnComplete" type="button">完成当前任务</button>
+              <button class="btn" id="btnResetCountdown" type="button">重置倒计时</button>
+            </div>
+
+            <div class="badge-wrap dashboard-badges-v5" id="allTaskBadges"></div>
+          </div>
+        </div>
+
+        <div class="card dashboard-side-v5">
+          <div class="panel-kicker">Today / Archive Deck</div>
+          <h2>今日摘要</h2>
+
+          <div class="dashboard-utility-v5">
+            <button class="btn gold" id="btnExport" type="button">导出备份</button>
+            <button class="btn" id="btnImport" type="button">导入备份</button>
+            <button class="btn danger" id="btnClearStorage" type="button">清空本地数据</button>
+            <input id="importFile" type="file" accept="application/json" hidden />
+          </div>
+
+          <div id="importMsg"></div>
+
+          <div class="export-note dashboard-note-v5">
+            <strong>数据说明</strong><br />
+            导出文件为 <code>.json</code> 备份，包含任务池、每日记录、周记录和当前会话状态。清理缓存或更换浏览器前，建议先导出。
+          </div>
+
+          <div class="box">
+            <div class="muted">完成任务数</div>
+            <div class="big-num" id="todayDoneBox">0</div>
+          </div>
+
+          <div class="box">
+            <div class="section-head">
+              <div class="muted">各任务完成分布</div>
+              <span class="section-tag">Focus</span>
+            </div>
+            <div id="todayTaskStats" class="list"></div>
+          </div>
+
+          <div class="box">
+            <div class="section-head">
+              <div class="muted">今日完成流水</div>
+              <span class="section-tag">Replay</span>
+            </div>
+            <div id="todaySessions"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-tasks">
+      <div class="scene-rail scene-rail-tasks" aria-label="场景跳转">
+        <button class="scene-pill" type="button" data-scene-target="intro">返回初始界面</button>
+        <button class="scene-pill" type="button" data-scene-target="dashboard">进入今日任务</button>
+        <button class="scene-pill" type="button" data-scene-target="tasks">进入任务池</button>
+        <button class="scene-pill" type="button" data-scene-target="week">本周星海记录</button>
+        <button class="scene-pill" type="button" data-scene-target="summary">查看全局结算</button>
+        <button class="scene-pill" type="button" data-scene-target="info">设置 / 说明</button>
+      </div>
+      <div class="panel-ambient-stage stage-tasks" data-ambient-panel="tasks" data-ambient-theme="tasks" data-ambient-density="medium" aria-hidden="true">
+        <div class="panel-ambient-backdrop"></div>
+        <div class="panel-ambient-vignette"></div>
+        <span class="panel-ambient-light light-a"></span>
+        <span class="panel-ambient-light light-b"></span>
+        <span class="panel-ambient-shard shard-a"></span>
+        <span class="panel-ambient-shard shard-b"></span>
+        <span class="panel-ambient-shard shard-c"></span>
+        <span class="panel-ambient-orbit orbit-a"></span>
+        <span class="panel-ambient-orbit orbit-b"></span>
+        <span class="panel-ambient-scan"></span>
+        <canvas class="ambient-particles"></canvas>
+      </div>
+      <div class="tasks-shell-v5">
+        <div class="card tasks-form-v5">
+          <div class="panel-kicker">Task Pool / Add Unit</div>
+          <h2>添加任务</h2>
+
+          <div class="field">
+            <label for="newTaskName">任务名称</label>
+            <input id="newTaskName" type="text" placeholder="输入新的学习任务" />
+          </div>
+
+          <div class="tasks-form-grid-v5">
+            <div class="field">
+              <label for="newTaskCategory">任务分类</label>
+              <select id="newTaskCategory">
+                <option value="未分类">未分类（预留）</option>
+                <option value="理论">理论 / 阅读</option>
+                <option value="练习">练习 / 刷题</option>
+                <option value="项目">项目 / 实战</option>
+                <option value="复盘">复盘 / 整理</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="newTaskPriority">任务优先级</label>
+              <select id="newTaskPriority">
+                <option value="普通">普通（预留）</option>
+                <option value="高">高优先级</option>
+                <option value="中">中优先级</option>
+                <option value="低">低优先级</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="newTaskMode">任务类型</label>
+            <select id="newTaskMode">
+              <option value="temporary">今日临时任务</option>
+              <option value="permanent">永久任务</option>
+            </select>
+          </div>
+
+          <div class="tasks-note-v5">
+            <span class="badge">分类字段预留</span>
+            <span class="badge">优先级字段预留</span>
+            <span class="muted">本轮仅保留界面占位，不参与存储与统计。</span>
+          </div>
+
+          <div class="row">
+            <button class="btn primary" id="btnAddTask" type="button">添加到任务池</button>
+          </div>
+
+          <div class="tip">
+            临时任务会在第二天自动清空。<br />
+            永久任务会持续保存在当前浏览器中。
+          </div>
+        </div>
+
+        <div class="card tasks-list-v5">
+          <div class="panel-kicker">Task Pool / Command Slots</div>
+          <h2>当前任务池</h2>
+
+          <div class="tasks-block-v5">
+            <div class="section-head">
+              <div class="muted">永久任务</div>
+              <span class="section-tag">Permanent</span>
+            </div>
+            <div id="permanentTaskList" class="list"></div>
+          </div>
+
+          <div class="tasks-block-v5">
+            <div class="section-head">
+              <div class="muted">今日临时任务</div>
+              <span class="section-tag">Temporary</span>
+            </div>
+            <div id="temporaryTaskList" class="list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-week">
+      <div class="scene-rail scene-rail-week" aria-label="场景跳转">
+        <button class="scene-pill" type="button" data-scene-target="intro">返回初始界面</button>
+        <button class="scene-pill" type="button" data-scene-target="dashboard">进入今日任务</button>
+        <button class="scene-pill" type="button" data-scene-target="tasks">进入任务池</button>
+        <button class="scene-pill" type="button" data-scene-target="week">本周星海记录</button>
+        <button class="scene-pill" type="button" data-scene-target="summary">查看全局结算</button>
+        <button class="scene-pill" type="button" data-scene-target="info">设置 / 说明</button>
+      </div>
+      <div class="panel-ambient-stage stage-week" data-ambient-panel="week" data-ambient-theme="week" data-ambient-density="low" aria-hidden="true">
+        <div class="panel-ambient-backdrop"></div>
+        <div class="panel-ambient-vignette"></div>
+        <span class="panel-ambient-light light-a"></span>
+        <span class="panel-ambient-light light-b"></span>
+        <span class="panel-ambient-shard shard-a"></span>
+        <span class="panel-ambient-shard shard-b"></span>
+        <span class="panel-ambient-shard shard-c"></span>
+        <span class="panel-ambient-orbit orbit-a"></span>
+        <span class="panel-ambient-orbit orbit-b"></span>
+        <span class="panel-ambient-scan"></span>
+        <canvas class="ambient-particles"></canvas>
+      </div>
+      <div class="grid-2">
+        <div class="card week-map-card">
+          <div class="panel-kicker">Week / Galaxy Mission Board</div>
+          <h2>本周星海记录</h2>
+          <div class="week-shell">
+            <div class="heat-layout">
+              <div class="weekday-labels" id="weekdayLabels"></div>
+              <div>
+                <div class="month-labels" id="monthLabels"></div>
+                <div class="heat-root" id="heatmap"></div>
+              </div>
+            </div>
+          </div>
+          <div class="heat-legend">
+            <span>少</span>
+            <span class="heat-cell lv0"></span>
+            <span class="heat-cell lv1"></span>
+            <span class="heat-cell lv2"></span>
+            <span class="heat-cell lv3"></span>
+            <span class="heat-cell lv4"></span>
+            <span class="heat-cell lv5"></span>
+            <span class="heat-cell lv6"></span>
+            <span>多</span>
+          </div>
+          <div class="week-cards" id="weekCards"></div>
+        </div>
+
+        <div class="card">
+          <div class="panel-kicker">Week / Intel Sheet</div>
+          <h2><span id="selectedDayTitle"></span> 任务情报</h2>
+          <div class="mini-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="box">
+              <div class="muted">完成任务数</div>
+              <div class="big-num" id="selectedDayDone">0</div>
+            </div>
+            <div class="box">
+              <div class="muted">工作时长</div>
+              <div class="big-num" id="selectedDayWork">00:00:00</div>
+            </div>
+          </div>
+          <div class="box" style="margin-top:14px;">
+            <div class="section-head">
+              <div class="muted">任务分布</div>
+              <span class="section-tag">Rank</span>
+            </div>
+            <div id="selectedDayStats" class="list"></div>
+          </div>
+          <div class="box" style="margin-top:14px;">
+            <div class="section-head">
+              <div class="muted">完成流水</div>
+              <span class="section-tag">Replay</span>
+            </div>
+            <div id="selectedDaySessions"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-summary">
+      <div class="scene-rail scene-rail-summary" aria-label="场景跳转">
+        <button class="scene-pill" type="button" data-scene-target="intro">返回初始界面</button>
+        <button class="scene-pill" type="button" data-scene-target="dashboard">进入今日任务</button>
+        <button class="scene-pill" type="button" data-scene-target="tasks">进入任务池</button>
+        <button class="scene-pill" type="button" data-scene-target="week">本周星海记录</button>
+        <button class="scene-pill" type="button" data-scene-target="summary">查看全局结算</button>
+        <button class="scene-pill" type="button" data-scene-target="info">设置 / 说明</button>
+      </div>
+      <div class="panel-ambient-stage stage-summary" data-ambient-panel="summary" data-ambient-theme="summary" data-ambient-density="low" aria-hidden="true">
+        <div class="panel-ambient-backdrop"></div>
+        <div class="panel-ambient-vignette"></div>
+        <span class="panel-ambient-light light-a"></span>
+        <span class="panel-ambient-light light-b"></span>
+        <span class="panel-ambient-shard shard-a"></span>
+        <span class="panel-ambient-shard shard-b"></span>
+        <span class="panel-ambient-shard shard-c"></span>
+        <span class="panel-ambient-orbit orbit-a"></span>
+        <span class="panel-ambient-orbit orbit-b"></span>
+        <span class="panel-ambient-scan"></span>
+        <canvas class="ambient-particles"></canvas>
+      </div>
+      <div class="card panel-shell summary-shell">
+        <div class="panel-kicker">Summary / Derived Analytics</div>
+        <h2>Summary 全局结算</h2>
+        <p class="skeleton-note">这里展示从每日记录动态派生出的总览与周期统计。周 / 月 / 季切换不会写回本地存储，只会基于现有 dailyLogs 实时计算。</p>
+        <div class="summary-skeleton-grid">
+          <div class="box">
+            <div class="muted">总累计时长</div>
+            <div class="big-num" id="summaryTotalTime">00:00:00</div>
+          </div>
+          <div class="box">
+            <div class="muted">总完成任务数</div>
+            <div class="big-num" id="summaryTotalDone">0</div>
+          </div>
+          <div class="box">
+            <div class="muted">活跃天数</div>
+            <div class="big-num" id="summaryActiveDays">0</div>
+          </div>
+        </div>
+        <div class="box" style="margin-top:14px;">
+          <div class="section-head">
+            <div>
+              <div class="muted">周 / 月 / 季统计</div>
+              <div class="summary-range" id="summaryRangeLabel">本周</div>
+            </div>
+            <span class="section-tag">Live</span>
+          </div>
+          <div class="summary-scope-switch" id="summaryScopeSwitch">
+            <button class="btn dark active" type="button" data-summary-scope="week">周统计</button>
+            <button class="btn dark" type="button" data-summary-scope="month">月统计</button>
+            <button class="btn dark" type="button" data-summary-scope="quarter">季统计</button>
+          </div>
+          <div class="summary-scope-grid" style="margin-top:14px;">
+            <div class="box">
+              <div class="muted">当前周期时长</div>
+              <div class="big-num" id="summaryScopeTime">00:00:00</div>
+            </div>
+            <div class="box">
+              <div class="muted">当前周期完成数</div>
+              <div class="big-num" id="summaryScopeDone">0</div>
+            </div>
+            <div class="box">
+              <div class="muted">当前周期活跃天数</div>
+              <div class="big-num" id="summaryScopeActive">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="summary-detail-grid">
+          <div class="box">
+            <div class="section-head">
+              <div class="muted">任务名称 / 类型预留排行</div>
+              <span class="section-tag">Rank</span>
+            </div>
+            <div class="list" id="summaryTaskRank"></div>
+          </div>
+          <div class="box">
+            <div class="section-head">
+              <div class="muted">累计结算面板</div>
+              <span class="section-tag">Settlement</span>
+            </div>
+            <div class="summary-slider-shell">
+              <button class="summary-slider-nav" id="summaryScrollPrev" type="button" aria-label="查看上一组">‹</button>
+              <div class="summary-slider-viewport" id="summarySliderViewport">
+                <div class="summary-chart summary-chart-track" id="summaryTrendChart"></div>
+              </div>
+              <button class="summary-slider-nav" id="summaryScrollNext" type="button" aria-label="查看下一组">›</button>
+            </div>
+            <div class="summary-chart-note" id="summaryTrendNote"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-info">
+      <div class="scene-rail scene-rail-info" aria-label="场景跳转">
+        <button class="scene-pill" type="button" data-scene-target="intro">返回初始界面</button>
+        <button class="scene-pill" type="button" data-scene-target="dashboard">进入今日任务</button>
+        <button class="scene-pill" type="button" data-scene-target="tasks">进入任务池</button>
+        <button class="scene-pill" type="button" data-scene-target="week">本周星海记录</button>
+        <button class="scene-pill" type="button" data-scene-target="summary">查看全局结算</button>
+        <button class="scene-pill" type="button" data-scene-target="info">设置 / 说明</button>
+      </div>
+      <div class="panel-ambient-stage stage-info" data-ambient-panel="info" data-ambient-theme="info" data-ambient-density="low" aria-hidden="true">
+        <div class="panel-ambient-backdrop"></div>
+        <div class="panel-ambient-vignette"></div>
+        <span class="panel-ambient-light light-a"></span>
+        <span class="panel-ambient-light light-b"></span>
+        <span class="panel-ambient-shard shard-a"></span>
+        <span class="panel-ambient-shard shard-b"></span>
+        <span class="panel-ambient-shard shard-c"></span>
+        <span class="panel-ambient-orbit orbit-a"></span>
+        <span class="panel-ambient-orbit orbit-b"></span>
+        <span class="panel-ambient-scan"></span>
+        <canvas class="ambient-particles"></canvas>
+      </div>
+      <div class="card">
+        <div class="panel-kicker">Guide / Settings Console</div>
+        <h2>设置与本地数据说明</h2>
+        <div class="success">V5 当前以 <code>index.html</code> 为主入口，运行依赖仅包含同目录下的 <code>style.css</code>、<code>script.js</code> 与 <code>assets/</code>。直接双击或使用 Live Server 打开即可。</div>
+
+        <div class="info-shell-grid">
+          <div class="box info-settings-card">
+            <div class="section-head">
+              <div class="muted">界面设置</div>
+              <span class="section-tag">Preferences</span>
+            </div>
+            <div class="setting-block">
+              <div class="setting-copy">
+                <strong>背景动效级别</strong>
+                <div class="setting-meta" id="infoMotionHint">完整模式显示大雪纷飞，减弱模式显示雨水闪电，关闭则停用全局天气动效。</div>
+              </div>
+              <div class="setting-chip-row" id="infoMotionControl">
+                <button class="btn dark motion-option" type="button" data-motion-option="full">完整</button>
+                <button class="btn dark motion-option" type="button" data-motion-option="reduced">减弱</button>
+                <button class="btn dark motion-option" type="button" data-motion-option="off">关闭</button>
+              </div>
+              <div class="setting-state">当前动效：<span id="infoMotionModeText">完整：大雪纷飞</span></div>
+            </div>
+
+            <div class="setting-block">
+              <div class="setting-copy">
+                <strong>天气音效</strong>
+                <div class="setting-meta" id="infoWeatherSoundHint">独立控制雨雪环境声，首次开启需要点击授权播放。</div>
+              </div>
+              <div class="setting-chip-row">
+                <button class="btn dark" type="button" id="btnToggleWeatherSound">开启</button>
+              </div>
+              <div class="setting-state">当前音效：<span id="infoWeatherSoundText">关闭</span></div>
+            </div>
+
+            <div class="setting-block setting-placeholder">
+              <div class="setting-copy">
+                <strong>主题模式</strong>
+                <div class="setting-meta">当前只保留兼容字段，后续可扩展更多主题皮肤。</div>
+              </div>
+              <div class="setting-state">当前模式：<span id="infoThemeModeText">default</span></div>
+            </div>
+          </div>
+
+          <div class="box info-guide-card">
+            <div class="section-head">
+              <div class="muted">运行与发布</div>
+              <span class="section-tag">Deploy</span>
+            </div>
+            <table class="table info-table-compact">
+              <thead>
+                <tr><th>步骤</th><th>你要做什么</th><th>说明</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td>保留 <code>index.html</code>、<code>style.css</code>、<code>script.js</code> 同目录</td><td>这是当前唯一入口与运行骨架</td></tr>
+                <tr><td>2</td><td>确保 <code>assets/</code> 一同发布</td><td>视觉资源全部走相对路径</td></tr>
+                <tr><td>3</td><td>直接双击或用 Live Server 打开</td><td>纯前端页面，无需额外安装</td></tr>
+                <tr><td>4</td><td>上传仓库根目录到 GitHub Pages</td><td>首页会以根目录 <code>index.html</code> 作为入口</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="box info-data-card">
+            <div class="section-head">
+              <div class="muted">本地数据与备份</div>
+              <span class="section-tag">Storage</span>
+            </div>
+            <div class="info-copy-list">
+              <p><strong>本地存储：</strong>学习记录、任务池、周记录和界面偏好都保存在当前浏览器的 <code>localStorage</code> 中，不会自动上传到服务器。</p>
+              <p><strong>导出 / 导入：</strong>Dashboard 右侧的“导出备份 / 导入备份”会读写 JSON 文件。导入会覆盖当前浏览器中的现有数据，建议先导出一份。</p>
+              <p><strong>清空本地数据：</strong>只影响当前浏览器当前站点的记录，不会删除仓库文件。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop hidden" id="appModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div class="modal-kicker">Mission Notice</div>
+        <div class="modal-title" id="modalTitle">提示</div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-lines" id="modalLines"></div>
+        <div class="modal-quote hidden" id="modalQuote"></div>
+        <div class="modal-note hidden" id="modalNote"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn hidden" id="modalSecondaryBtn" type="button">关闭</button>
+        <button class="btn primary" id="modalPrimaryBtn" type="button">知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./vendor/jquery.min.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>
